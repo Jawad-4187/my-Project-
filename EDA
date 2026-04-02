@@ -1,0 +1,52 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# --- PHASE 3: EDA (VISUALS) ---
+
+# 1. Load Data
+# loading the cleaned and featured data from phase 2
+try:
+    df = pd.read_csv('data/cleaned/AmesHousing_features.csv')
+except FileNotFoundError:
+    df = pd.read_csv('AmesHousing_features.csv')
+
+# 2. Price Distribution
+plt.figure(figsize=(10, 6))
+sns.histplot(df['SalePrice'], kde=True, color='blue')
+plt.title('House Price Distribution')
+plt.show()
+
+# 3. Area vs Price
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x='Gr_Liv_Area', y='SalePrice', data=df, alpha=0.5)
+plt.title('Living Area vs Sale Price')
+plt.show()
+
+# 4. Correlations (Top 10)
+plt.figure(figsize=(12, 8))
+top_corr = df.select_dtypes(include=[np.number]).corr()['SalePrice'].sort_values(ascending=False).head(10)
+top_corr.plot(kind='barh', color='green')
+plt.title('Top 10 Features Correlated with Price')
+plt.show()
+
+# 5. Grouped Boxplot (Outliers Visualization)
+plt.figure(figsize=(10, 6))
+sns.boxplot(x='Age_Group', y='SalePrice', data=df, hue='Age_Group', palette='Set2', legend=False)
+plt.title('SalePrice Comparison by Age Group')
+plt.show()
+
+# 6. KDE Comparison (Distribution Shape)
+plt.figure(figsize=(10, 6))
+sns.kdeplot(df['SalePrice'], fill=True, color='purple')
+plt.title('KDE of SalePrice')
+plt.show()
+
+# 7. Scatter with 3rd Variable (Quality)
+plt.figure(figsize=(10, 6))
+sns.scatterplot(data=df, x='Gr_Liv_Area', y='SalePrice', hue='Overall_Qual', palette='viridis', alpha=0.7)
+plt.title('Area vs Price (Colored by Quality)')
+plt.show()
+
+print("Phase 3 Visuals Completed Successfully")
