@@ -1,0 +1,58 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.preprocessing import StandardScaler
+
+# --- PHASE 2: FEATURES ---
+
+# 1. Load Cleaned Data from Phase
+
+try:
+    df = pd.read_csv('data/cleaned/AmesHousing_cleaned.csv')
+except FileNotFoundError:
+    df = pd.read_csv('AmesHousing_cleaned.csv')
+
+# 2. Encoding Categorical Variables
+# One-Hot Encoding for Neighborhood and Bldg_Type
+df = pd.get_dummies(df, columns=['Neighborhood'], drop_first=True)
+df = pd.get_dummies(df, columns=['Bldg_Type'], drop_first=True)
+
+# Ordinal Encoding for Exterior Quality
+qual_map = {'Ex': 5, 'Gd': 4, 'TA': 3, 'Fa': 2, 'Po': 1}
+df['Exter_Qual_Num'] = df['Exter_Qual'].map(qual_map).fillna(3)
+
+# 3. Scaling Numerical Features
+scaler = StandardScaler()
+df['Gr_Liv_Area_Scaled'] = scaler.fit_transform(df[['Gr_Liv_Area']])
+df['Lot_Area_Scaled'] = scaler.fit_transform(df[['Lot_Area']])
+
+# 4. Creating New Domain Features
+# Price Per Sqft (Handling division by zero)
+df['Price_Per_Sqft'] = df['SalePrice'] / np.where(df['Gr_Liv_Area'] == 0, 1, df['Gr_Liv_Area'])
+
+# House Age (Year Sold - Year Built)
+df['House_Age'] = df['Yr_Sold'] - df['Year_Built']
+
+# Age Grouping (Binning)
+df['Age_Group'] = pd.cut(df['House_Age'],
+                         bins=[0, 10, 30, 100, 500],
+                         labels=['New', 'Recent', 'Old', 'Very Old'])
+
+# 5. Interaction Feature (Quality x Area)
+df['Quality_x_Area'] = df['Overall_Qual'] * df['Gr_Liv_Area']
+
+# 6. Log Transformation for Skewed Target (SalePrice)
+df['Log_SalePrice'] = np.log1p(df['SalePrice'])
+
+# 7. Remove Redundant Features (High Correlation > 0.95)
+corr_matrix = df.select_dtypes(include=[np.number]).corr().abs()
+upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+to_drop = [column for column in upper.columns if any(upper[column] > 0.95)]
+df.drop(columns=to_drop, inplace=True)
+
+# 8. Save Engineered Dataset for Phase 3
+df.to_csv('data/cleaned/AmesHousing_features.csv', index=False)
+
+print(f"Phase 2 Completed. New shape: {df.shape}")
+print("Feature Engineering dataset saved as 'AmesHousing_features.csv'")
