@@ -1,0 +1,47 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# --- PHASE 1: CLEANING ---
+
+# 1. Load Data
+df = pd.read_csv("C:\\Users\\acer21\\Downloads\\AmesHousing.csv")
+
+# 2. Columns
+df.columns = df.columns.str.replace(' ', '_')
+
+# 3. Explore
+print(df.info())
+print(df.head())
+print(df.shape)
+
+# 4. Types
+df['MS_SubClass'] = df['MS_SubClass'].astype(str)
+df['Yr_Sold'] = df['Yr_Sold'].astype(int)
+
+# 5. Missing Values
+missing = df.isnull().sum() / len(df)
+drop_cols = missing[missing > 0.8].index
+df.drop(columns=drop_cols, inplace=True)
+df['Lot_Frontage'] = df['Lot_Frontage'].fillna(df['Lot_Frontage'].median())
+
+# 6. Duplicates
+print("Duplicates:", df.duplicated().sum())
+df.drop_duplicates(inplace=True)
+
+# 7. Outliers
+limit = df['SalePrice'].quantile(0.99)
+df['SalePrice'] = np.where(df['SalePrice'] > limit, limit, df['SalePrice'])
+
+sns.boxplot(x=df['SalePrice'])
+plt.title("SalePrice Before/After Capping")
+plt.show()
+
+# Checks
+print("Nulls in SalePrice:", df['SalePrice'].isnull().sum())
+print("All prices > 0:", (df['SalePrice'] > 0).all())
+
+# 8. Save Cleaned
+df.to_csv('data/cleaned/AmesHousing_cleaned.csv', index=False)
+print("Phase 1 Completed Successfully")
